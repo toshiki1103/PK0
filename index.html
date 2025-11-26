@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="css/game.css">
+    <script src="js/jquery-2.1.3.min.js"></script>
+    <title>サッカーPKゲーム</title>
+</head>
+
+<body>
+
+<audio id="goalSound" preload="auto">
+    <source src="./music/goal.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="wistle" preload="auto">
+    <source src="./music/wistle.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="cheer" preload="auto">
+    <source src="./music/cheer.mp3" type="audio/mpeg">
+</audio>
+
+<audio id="ng" preload="auto">
+    <source src="./music/ng.mp3" type="audio/mpeg">
+</audio>
+
+    <header>
+        <h1>⚽蹴る方向を選択して、蹴るだけの簡単なゲームです⚽</h1>
+        <p>キーパーの逆をついてゴールを決めよう！</p>
+    </header>
+
+    <main>
+        
+
+        <div class="field">
+    
+            <div class="goal-frame">
+                <div class="gk" id="gk">
+                    <img src="./—Pngtree—a vibrant color silhouette of_16247122.png" 
+                    alt="GK"></div>
+                <div class="ball" id="ball">⚽</div>
+            </div>
+            <div class="pc-choice" id="pc-choice"></div>
+            <div class="result-message" id="result"></div>
+        </div>
+
+        <div class="shoot-options">
+            <button class="shoot-btn" id="left-btn">左</button>
+            <button class="shoot-btn" id="center-btn">真ん中</button>
+            <button class="shoot-btn" id="right-btn">右</button>
+        </div>
+
+        <div class="game-info">
+            <p id="game-status">シュート方向を選んでください</p>
+        </div>
+
+    </main>
+
+    <footer>
+        <p>© 2025 PK Game - 日本語版</p>
+    </footer>
+
+    <script>
+        let userScore = 0;
+        let pcScore = 0;
+    
+
+        $(".shoot-btn").on("click", function () {
+            // ボタンを一時的に無効化
+            $(".shoot-btn").prop("disabled", true);
+
+            // ランダムな数値を生成（GKの位置）
+            const pcDirection = Math.ceil(Math.random() * 3);
+
+            // ボール表示にアニメーション
+            // $("#ball").removeClass("shoot");
+            // setTimeout(function() {$("#ball").addClass("shoot"); }, 10);
+
+            // GKの動きを設定
+            let gkPosition = 0;
+            let gkText = "";
+            if (pcDirection == 1) {
+                gkPosition = -100;
+                gkText = "GKは左に飛ぶ！";
+            }
+            if (pcDirection == 2) {
+                gkPosition = 0;
+                gkText = "GKは真ん中を守る！";
+            }
+            if (pcDirection == 3) {
+                gkPosition = 100;
+                gkText = "GKは右に飛ぶ！";
+            }
+
+            // GKを移動
+            $("#gk").css("transform", `translate(-50%, -50%) 
+            translateX(${gkPosition}px)`);
+
+            // GKの選択肢を表示
+            $("#pc-choice").html(gkText);
+
+            // ユーザーの選択を取得
+            const clickedBtn = $(this).attr("id");
+            let userDirection = 0;
+            if (clickedBtn == "left-btn") userDirection = 1;
+            if (clickedBtn == "center-btn") userDirection = 2;
+            if (clickedBtn == "right-btn") userDirection = 3;
+
+            // デバッグ用：コンソールに出力
+            console.log("クリックされたボタン:", clickedBtn);
+            console.log("ユーザー方向:", userDirection);
+            
+           //ボールの移動距離
+            let ballPosition = 0;
+            if(userDirection == 1) ballPosition = -150 ;
+            if(userDirection == 2) ballPosition = 0 ;
+            if(userDirection == 3) ballPosition = 150;
+
+            // デバッグ用
+            console.log("ballPosition:", ballPosition);
+
+            //ボールのアニメーション制御
+            //アニメーションクラスを解除
+            $("#ball").removeClass("shoot");
+
+           // CSS変数を設定（vanilla JSで設定）
+            document.getElementById("ball").style.setProperty("--ballPosition", ballPosition + "px");
+            document.getElementById("ball").style.setProperty("--ballStartPosition", "0px");
+
+            //僅かに送らせて（50ミリ秒）クラスを再度追加してアニメーション開始
+            //遅延させないとブラウザが変更を認識できずアニメが再実行できない
+            setTimeout(function(){
+                $("#ball").addClass("shoot");
+            }, 50);
+
+      
+            // 結果判定（1500ms後に表示）
+            setTimeout(function () {
+                if (userDirection == pcDirection) {
+                    // セーブ
+                    $("#result").html("セーブ！").removeClass("goal").addClass("save");
+                    pcScore++;
+                    $("#pc-score").html(pcScore);
+                    $("#game-status").html("GKがセーブしました。もう一度チャレンジしてください。");
+
+                    //音を再生
+                    document.getElementById("ng").play();
+
+                    //ボールを消す処理
+                    $("#ball").removeClass("shoot");
+                } else {
+                    // ゴール
+                    $("#result").html("GOAL!! ⚽✨").removeClass("save").addClass("goal");
+                    userScore++;
+                    $("#user-score").html(userScore);
+                    $("#game-status").html("ゴール決定！連続シュートに挑戦してください。");
+
+
+                    //音を再生
+                    setTimeout(function(){document.getElementById("goalSound").play();},100);
+                    setTimeout(function(){document.getElementById("cheer").play();},500);
+
+                    //ボールを消す処理
+                    $("#ball").removeClass("shoot");
+                }
+
+                // 3.5秒後にボタンを再度有効化
+                setTimeout(function () {
+                    $(".shoot-btn").prop("disabled", false);
+                    $("#pc-choice").html("");
+                    $("#result").html("");
+                    // GKを元の位置に戻す
+                    $("#gk").css("transform", "translate(-50%, -50%) translateX(0)");
+                }, 2000);
+            }, 1500);
+        });
+
+       
+    </script>
+
+</body>
+
+</html>
